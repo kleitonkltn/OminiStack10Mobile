@@ -11,7 +11,27 @@ function Main({ navigation }) {
     const [ currentRegion, setCurrentRegion ] = useState(null)
     const [ devs, setDevs ] = useState([])
     const [ techs, setTechs ] = useState('')
+    const [ regionView, setRegionView ] = useState(null)
+    useEffect(() => {
+        const dev = navigation.getParam('dev')
+        if (dev) {
+            let longitude = dev.location.coordinates[ 0 ]
+            let latitude = dev.location.coordinates[ 1 ]
+            setDevs([ dev ])
 
+            setRegionView({
+                latitude,
+                longitude,
+                latitudeDelta: 0.015,
+                longitudeDelta: 0.022
+            })
+            setTimeout(() => {
+                navigation.setParams({ dev: null })
+                setRegionView(null)
+            }, 500)
+
+        }
+    }, [ navigation.state.params ])
     useEffect(() => {
         async function loadInitialPosition() {
             const { granted } = await requestPermissionsAsync()
@@ -64,7 +84,7 @@ function Main({ navigation }) {
     }
     return <>
         <MapView onRegionChangeComplete={handleRegionChange}
-            initialRegion={currentRegion}
+            initialRegion={currentRegion} region={regionView}
             style={styles.map}>
             {devs.map((dev) => (
                 <Marker key={dev._id}
@@ -77,7 +97,7 @@ function Main({ navigation }) {
                     <Callout onPress={() => { navigation.navigate('Profile', { github_username: dev.github_username }) }}>
                         <View style={styles.callout}>
                             <Text style={styles.devName}>{dev.name}</Text>
-                            <Text style={styles.devBio}>{dev.bio}</Text>
+                            {dev.bio ? <Text style={styles.devBio}>{dev.bio}</Text> : null}
                             <Text style={styles.devTechs}>{dev.techs.join(', ')}</Text>
                         </View>
                     </Callout>
@@ -98,7 +118,11 @@ function Main({ navigation }) {
                 <MaterialIcons name='my-location' size={24} color='#fff' />
             </TouchableOpacity>
         </View>
-
+        <View style={styles.viewButtonList}>
+            <TouchableOpacity onPress={() => { navigation.navigate('List') }} style={styles.buttonToList}>
+                <MaterialIcons name='list' size={24} color='#fff' />
+            </TouchableOpacity>
+        </View>
 
     </>
 }
@@ -112,7 +136,7 @@ const styles = StyleSheet.create({
         width: 54,
         height: 54,
         borderRadius: 4,
-        borderWidth: 4,
+        backgroundColor: '#fff',
         borderColor: '#fff'
     },
     callout: {
@@ -161,6 +185,21 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         borderRadius: 50,
         marginLeft: 20
+    },
+    viewButtonList: {
+        position: 'absolute',
+        bottom: 20,
+        right: 20,
+        zIndex: 5,
+        flexDirection: 'row'
+    },
+    buttonToList: {
+        width: 50,
+        height: 50,
+        backgroundColor: '#8e4dff',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 50,
     }
 })
 export default Main
